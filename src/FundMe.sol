@@ -7,11 +7,13 @@ error FundMe_Not_Owner();
 
 contract FundMe {
     using PriceConverter for uint256;
-    address private immutable i_owner;
+    address public immutable i_owner;
     address[] public funder;
     uint256 constant MIN_USD = 5 * 1e18;
+    AggregatorV3Interface priceFeed;
 
-    constructor() {
+    constructor(address _priceFeed) {
+        priceFeed = AggregatorV3Interface(_priceFeed);
         i_owner = msg.sender;
     }
 
@@ -22,16 +24,21 @@ contract FundMe {
         _;
     }
 
+    function getMinValue() public pure returns (uint256) {
+        return MIN_USD;
+    }
+
     function fundMe() public payable {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            0x694AA1769357215DE4FAC081bf1f309aDC325306
-        );
         require(
             msg.value.getEquivalentUSD(priceFeed) >= MIN_USD,
             "Sorry you cannot donate less than 5USD"
         );
         funder.push(msg.sender);
         mapFunder[msg.sender] += msg.value;
+    }
+
+    function getVersion() public view returns (uint256) {
+        return priceFeed.version();
     }
 
     function withdraw() public OnlyOwner {
@@ -43,9 +50,11 @@ contract FundMe {
         (bool sent, ) = i_owner.call{value: address(this).balance}("");
         require(sent, "Failed Withdraw");
     }
+
     fallback() external payable {
         fundMe();
     }
+
     receive() external payable {
         fundMe();
     }
