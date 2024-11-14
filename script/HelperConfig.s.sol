@@ -12,9 +12,12 @@ contract HelperConfig is Script {
     NetworkConfig public activeNetConfig;
     uint8 constant DECIMALS = 8;
     int256 constant INITIAL_PRICE = 2000e8;
+
     constructor() {
         if (block.chainid == 11155111) {
             activeNetConfig = getSepoliaEthConfig();
+        } else if (block.chainid == 1) {
+            activeNetConfig = getMainNetConfig();
         } else {
             activeNetConfig = getAnvilConfig();
         }
@@ -27,11 +30,24 @@ contract HelperConfig is Script {
         return sepoliaConfig;
     }
 
-    function getAnvilConfig() public pure returns (NetworkConfig memory) {
+    function getMainNetConfig() public pure returns (NetworkConfig memory) {
+        NetworkConfig memory mainNetConfig = NetworkConfig({
+            priceFeed: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+        });
+        return mainNetConfig;
+    }
 
+    function getAnvilConfig() public returns (NetworkConfig memory) {
+        if (activeNetConfig.priceFeed != address(0)) return activeNetConfig;
         vm.startBroadcast();
-        MockV3Aggregator mockPriceFeed = new MockV3Aggregator(DECIMALS,INITIAL_PRICE);
+        MockV3Aggregator mockPriceFeed = new MockV3Aggregator(
+            DECIMALS,
+            INITIAL_PRICE
+        );
         vm.stopBroadcast();
-        NetworkConfig  memory anvilConfig = NetworkConfig({priceFeed:address(mockPriceFeed)});
+        NetworkConfig memory anvilConfig = NetworkConfig({
+            priceFeed: address(mockPriceFeed)
+        });
+        return anvilConfig;
     }
 }

@@ -6,17 +6,51 @@ import {DeployFundMe} from "../script/DeployFundMe.s.sol";
 
 contract FundMeTest is Test {
     FundMe fundme;
+    address USER = makeAddr("user"); //generate unique Ethereum Address based on String input.
+    uint256 constant VALUE_SENT = 10e18;
+    uint256 constant STARTING_BALANCE = 10 ether;
 
     function setUp() external {
-        DeployFundMe deployfundMe = new DeployFundMe();//since we're using the deployFundMe and is powered by broadcast it default it to msg.sender the owner. 
-        fundme = deployfundMe.run();
+        DeployFundMe deployfundMe = new DeployFundMe(); // Deploy the FundMe contract
+        fundme = deployfundMe.run(); // Assign the deployed FundMe contract instance
+        vm.deal(USER, STARTING_BALANCE); // Provide balance to USER address (10 ether)
+    }
+
+    function testFundFailWithoutEnoughFund() external {
+        vm.expectRevert(); // Expect the following statement to revert the transaction
+        fundme.fundMe(); // Calling fundMe without enough funds should fail
+    }
+
+    function testChangesinFundMe() external {
+        vm.prank(USER); // Simulate the transaction as if it's coming from USER address
+        fundme.fundMe{value: VALUE_SENT}(); // USER sends VALUE_SENT ether to the contract
+        uint256 amountFunded = fundme.getAddressAmountFund(USER); // Get the amount funded by USER
+        assertEq(amountFunded, VALUE_SENT); // Assert that the amount funded equals VALUE_SENT
+    }
+
+    function testIfFunderisAddedInMap() external {
+        vm.prank(USER); // Simulate the transaction as if it's coming from USER address
+        fundme.fundMe{value: VALUE_SENT}(); // USER sends VALUE_SENT ether to the contract
+        assertEq(fundme.getFunderWithIndex(0), USER); // Assert that USER's address is added as a funder at index 0
+    }
+
+    modifier funded() {
+        vm.prank(USER); // Simulate the transaction as if it's coming from USER address
+        fundme.fundMe{value: VALUE_SENT}(); // USER sends VALUE_SENT ether to the contract
+        _; // Continue executing the function that uses this modifier
+    }
+
+    function testOnlyOwnerWithdraw() external funded {
+        vm.expectRevert(); // Expect the following statement to revert the transaction
+        vm.prank(USER); // Simulate the transaction as if it's coming from USER address (not the owner)
+        fundme.withdraw(); // USER attempts to withdraw funds, but should fail (only owner can withdraw)
     }
 
     function testOwner() external view {
-        assertEq(fundme.i_owner(), msg.sender); //basically this test deploy the contract so owner is this contract itself
+        assertEq(fundme.i_owner(), msg.sender); //the vm.broadcast(); make the msg.sender the owner if not then this contract would have been the owner as address(this)
     }
 
     function testVersion() external view {
-        assertEq(fundme.getVersion(), 4);
+        assertEq(fundme.getVersion(), 4); // Assert that the contract version is 4
     }
 }
