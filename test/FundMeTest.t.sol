@@ -9,7 +9,7 @@ contract FundMeTest is Test {
     address USER = makeAddr("user"); //generate unique Ethereum Address based on String input.
     uint256 constant VALUE_SENT = 10e18;
     uint256 constant STARTING_BALANCE = 10 ether;
-
+    uint256 constant GAS_PRICE = 1;
     function setUp() external {
         DeployFundMe deployfundMe = new DeployFundMe(); // Deploy the FundMe contract
         fundme = deployfundMe.run(); // Assign the deployed FundMe contract instance
@@ -47,7 +47,53 @@ contract FundMeTest is Test {
     }
 
     function testOwner() external view {
-        assertEq(fundme.i_owner(), msg.sender); //the vm.broadcast(); make the msg.sender the owner if not then this contract would have been the owner as address(this)
+        assertEq(fundme.getOwner(), msg.sender); //the vm.broadcast(); make the msg.sender the owner if not then this contract would have been the owner as address(this)
+    }
+
+    function testOnlyOwnerCanWithdraw() external funded {
+        //Arrage
+        uint256 startingOwnerBalance = fundme.getOwner().balance;
+        uint256 startingContractBalance = address(fundme).balance;
+        //Act
+        // uint256 gasStarting = gasleft();
+        // vm.txGasPrice(GAS_PRICE);//By default in anvil the gasPrice would be zero so gasPrice
+        // vm.prank(fundme.getOwner());
+        fundme.withdraw();
+        // uint256 gasEnding = gasleft();
+        // uint256 gasUsed = (gasStarting - gasEnding) * tx.gasprice;
+        // console.log(gasUsed);
+        //Assert
+        uint256 endingContractBalance = address(fundme).balance;
+        uint256 endingOwnerBalance = fundme.getOwner().balance;
+        assertEq(
+            startingOwnerBalance + startingContractBalance,
+            endingOwnerBalance
+        );
+        assertEq(endingContractBalance, 0);
+    }
+
+    function testWithMultipleFunders() external {
+        //Assert
+        uint160 numbersOfFunders = 10; //working with address just have uint160
+        uint160 startingFundIndex = 1;
+        for (uint160 i = startingFundIndex; i < numbersOfFunders; i++) {
+            hoax(address(i), STARTING_BALANCE); //hoax = vm.prank + vm.deal
+            fundme.fundMe{value: STARTING_BALANCE}();
+        }
+        uint256 startingOwnerBalance = address(fundme.getOwner()).balance;
+        uint256 startingContractBalance = address(fundme).balance;
+
+        //Act
+        vm.startPrank(fundme.getOwner()); //Starts impersonating the address returned by fundme.getOwner(), allowing the following actions to appear as if they are performed by this address
+        fundme.withdraw();
+        vm.stopPrank(); //Ends the impersonation started by vm.startPrank, returning to the original caller.
+
+        //Assert
+        assert(address(fundme).balance == 0);
+        assert(
+            startingContractBalance + startingOwnerBalance ==
+                fundme.getOwner().balance
+        );
     }
 
     function testVersion() external view {
