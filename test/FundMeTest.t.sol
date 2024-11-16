@@ -57,7 +57,7 @@ contract FundMeTest is Test {
         //Act
         // uint256 gasStarting = gasleft();
         // vm.txGasPrice(GAS_PRICE);//By default in anvil the gasPrice would be zero so gasPrice
-        // vm.prank(fundme.getOwner());
+        vm.prank(fundme.getOwner());
         fundme.withdraw();
         // uint256 gasEnding = gasleft();
         // uint256 gasUsed = (gasStarting - gasEnding) * tx.gasprice;
@@ -76,10 +76,15 @@ contract FundMeTest is Test {
         //Assert
         uint160 numbersOfFunders = 10; //working with address just have uint160
         uint160 startingFundIndex = 1;
+        uint256 gasStarting = gasleft();
+        vm.txGasPrice(GAS_PRICE);
         for (uint160 i = startingFundIndex; i < numbersOfFunders; i++) {
             hoax(address(i), STARTING_BALANCE); //hoax = vm.prank + vm.deal
             fundme.fundMe{value: STARTING_BALANCE}();
         }
+        uint256 gasEnding = gasleft();
+        uint256 gasUsed = (gasStarting - gasEnding) * tx.gasprice;
+        console.log(gasUsed);
         uint256 startingOwnerBalance = address(fundme.getOwner()).balance;
         uint256 startingContractBalance = address(fundme).balance;
 
