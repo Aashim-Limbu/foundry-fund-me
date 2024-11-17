@@ -39,7 +39,6 @@ contract FundMeTest is Test {
         fundme.fundMe{value: VALUE_SENT}(); // USER sends VALUE_SENT ether to the contract
         _; // Continue executing the function that uses this modifier
     }
-
     function testOnlyOwnerWithdraw() external funded {
         vm.expectRevert(); // Expect the following statement to revert the transaction
         vm.prank(USER); // Simulate the transaction as if it's coming from USER address (not the owner)
@@ -63,6 +62,19 @@ contract FundMeTest is Test {
         // uint256 gasUsed = (gasStarting - gasEnding) * tx.gasprice;
         // console.log(gasUsed);
         //Assert
+        uint256 endingContractBalance = address(fundme).balance;
+        uint256 endingOwnerBalance = fundme.getOwner().balance;
+        assertEq(
+            startingOwnerBalance + startingContractBalance,
+            endingOwnerBalance
+        );
+        assertEq(endingContractBalance, 0);
+    }
+    function testOptimisedCanWithdraw() external funded {
+        uint256 startingOwnerBalance = fundme.getOwner().balance;
+        uint256 startingContractBalance = address(fundme).balance;
+        vm.prank(fundme.getOwner());
+        fundme.optimisedWithdraw();
         uint256 endingContractBalance = address(fundme).balance;
         uint256 endingOwnerBalance = fundme.getOwner().balance;
         assertEq(

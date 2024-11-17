@@ -40,7 +40,16 @@ contract FundMe {
     function getVersion() public view returns (uint256) {
         return s_priceFeed.version();
     }
-
+    function optimisedWithdraw() public OnlyOwner {
+        uint256 totalLength = s_funder.length;
+        for (uint256 i = 0; i < totalLength; i++) {
+            address tempaddr = s_funder[i];
+            s_mapFunder[tempaddr] = 0;
+        }
+        s_funder = new address[](0);
+        (bool sent,) = i_owner.call{value: address(this).balance}("");
+        require(sent, "Failed Optimised Withdraw");
+    }
     function withdraw() public OnlyOwner {
         for (uint256 i = 0; i < s_funder.length; i++) {
             address tempAdd = s_funder[i];
