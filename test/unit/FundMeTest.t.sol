@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 import {Test, console} from "forge-std/Test.sol";
-import {FundMe} from "../src/FundMe.sol";
-import {DeployFundMe} from "../script/DeployFundMe.s.sol";
+import {FundMe} from "../../src/FundMe.sol";
+import {DeployFundMe} from "../../script/DeployFundMe.s.sol";
 
 contract FundMeTest is Test {
     FundMe fundme;
@@ -11,6 +11,7 @@ contract FundMeTest is Test {
     uint256 constant STARTING_BALANCE = 10 ether;
     uint256 constant GAS_PRICE = 1;
     function setUp() external {
+        //special function that run first before the other function
         DeployFundMe deployfundMe = new DeployFundMe(); // Deploy the FundMe contract
         fundme = deployfundMe.run(); // Assign the deployed FundMe contract instance
         vm.deal(USER, STARTING_BALANCE); // Provide balance to USER address (10 ether)
@@ -56,6 +57,7 @@ contract FundMeTest is Test {
         //Act
         // uint256 gasStarting = gasleft();
         // vm.txGasPrice(GAS_PRICE);//By default in anvil the gasPrice would be zero so gasPrice
+        // we can also use vm.prank(msg.sender); as the startBroadcast make the owner to msg.sender
         vm.prank(fundme.getOwner());
         fundme.withdraw();
         // uint256 gasEnding = gasleft();
