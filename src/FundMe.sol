@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0 <0.9.0;
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {PriceConverter} from "./PriceConverter.sol";
-
 error FundMe_Not_Owner();
 
 contract FundMe {
@@ -31,7 +30,7 @@ contract FundMe {
     function fundMe() public payable {
         require(
             msg.value.getEquivalentUSD(s_priceFeed) >= MIN_USD,
-            "Sorry you cannot donate less than 5USD"
+            "Sorry you cannot donate less than 5 USD"
         );
         s_funder.push(msg.sender);
         s_mapFunder[msg.sender] += msg.value;
@@ -40,6 +39,7 @@ contract FundMe {
     function getVersion() public view returns (uint256) {
         return s_priceFeed.version();
     }
+
     function optimisedWithdraw() public OnlyOwner {
         uint256 totalLength = s_funder.length;
         for (uint256 i = 0; i < totalLength; i++) {
@@ -47,9 +47,10 @@ contract FundMe {
             s_mapFunder[tempaddr] = 0;
         }
         s_funder = new address[](0);
-        (bool sent,) = i_owner.call{value: address(this).balance}("");
+        (bool sent, ) = i_owner.call{value: address(this).balance}("");
         require(sent, "Failed Optimised Withdraw");
     }
+
     function withdraw() public OnlyOwner {
         for (uint256 i = 0; i < s_funder.length; i++) {
             address tempAdd = s_funder[i];
