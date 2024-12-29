@@ -116,6 +116,6 @@ contract FundMeTest is Test {
     }
 
     function testVersion() external view {
-        assertEq(fundme.getVersion(), 4); // Assert that the contract version is 4
+        assertEq(fundme.getVersion(), 4); // Assert that the contract version is 4 [price feed version is 4]
     }
 }
