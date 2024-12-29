@@ -8,6 +8,7 @@ contract DeployFundMe is Script {
     function run() external returns (FundMe) {
         HelperConfig helperconfig = new HelperConfig();
         address ethUSDpriceFeed = helperconfig.activeNetConfig();//quite strange like we don't need to destructure the address for one element in struct;
+        //It is because the activeNetConfig is declared as public and when we invoke the activeNetConfig it give us the getter that returns the address to feed.
         //before broadcast you'll no longer need to spend gas on it for this initialization
         vm.startBroadcast();
         FundMe fundme = new FundMe(ethUSDpriceFeed); //Broadcast makes the owner default to msg.sender
